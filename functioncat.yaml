@@ -1,0 +1,4 @@
+runtime: nodejs
+entrypoint: node server.js
+env:
+  FUNCTIONCAT_RUNTIME_PORT: 3000
