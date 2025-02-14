@@ -1,100 +1,49 @@
-system_spec_version: 1.0
+system: 1.0.0
+
 info:
-  name: ai chat tool
-  vars:
-    BAIDU_API_KEY:
-      description: >-
-        百度千帆ModelBuilder>应用接入>应用API Key, 
-        https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application/v1
-    BAIDU_SECRET_KEY:
-      description: >-
-        百度千帆ModelBuilder>应用接入>Secret Key, 
-        https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application/v1
-    STORE_SVC_API_KEY:
-      description: "Store 服务的API KEY。"
+  name: markitdown
+  description: Markdown processing static site
+
 envs:
   dev:
     branch: dev
   prod:
     branch: main
+
 routes:
   main_env: prod
-  main_app: chatui
-auths:
-  apikey:
-    type: api_key
-    envs:
-      dev:
-        in: header
-        name: API-KEY
-        value: ${{vars.STORE_SVC_API_KEY}}
-      prod:
-        in: header
-        name: API-KEY
-        value: ${{vars.STORE_SVC_API_KEY}}
+  main_app: frontend
+
 apps:
-  chatui:
+  frontend:
     type: web_frontend
     envs:
       dev:
         build:
-          root_path: apps/chat-ui
-          script: npm install; npm run build
+          root_path: .
+          script: |
+            npm install
+            npm run build
         provision:
-          root_path: apps/chat-ui/dist
-          type: nodejs
+          root_path: dist
+          type: static_site
       prod:
         build:
-          root_path: apps/chat-ui
-          script: npm install; npm run build
+          root_path: .
+          script: |
+            npm ci --production
+            npm run build
         provision:
-          root_path: apps/chat-ui/dist
-          type: nodejs
-  chatapi:
-    type: nodejs
-    envs:
-      dev:
-        build:
-          root_path: apps/chat-api
-          script: npm install
-        provision:
-          type: nodejs
-          root_path: apps/chat-api
-          start_command: node server.js
-          timeout: 120
-          vars:
-            - BAIDU_API_KEY
-            - BAIDU_SECRET_KEY
-            - STORE_SVC_API_KEY
-      prod:
-        build:
-          root_path: apps/chat-api
-          script: npm install
-        provision:
-          type: nodejs
-          root_path: apps/chat-api
-          start_command: node server.js
-          timeout: 120
-          vars:
-            - BAIDU_API_KEY
-            - BAIDU_SECRET_KEY
-            - STORE_SVC_API_KEY
-services:
-  store:
-    type: kv_store
-    envs:
-      dev:
-        auths:
-          - apikey
-        provision:
-          type: kv_store_v1
-          namespaces:
-            - dailycounter
-      prod:
-        auths:
-          - apikey
-        provision:
-          type: kv_store_v1
-          namespaces:
-            - dailycounter
-            - counter2
+          root_path: dist
+          type: static_site
+          cache_control:
+            - "**/* 3600"
+
+cache:
+  paths:
+    - node_modules
+
+hooks:
+  post_deploy:
+    - echo "✅ Markdown site deployed: ${FC_DEPLOY_URL}"
+    - echo "📊 Build version: ${FC_BUILD_ID}"
